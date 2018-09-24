@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>myFus</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script lang="text/javascript">
+        window.onload = function() {{
+            document.querySelectorAll('.modal-background').forEach(el => {{
+                el.onclick = function() {{
+                    document.querySelectorAll('.is-active').forEach(m => {{
+                        m.classList.remove('is-active');
+                    }});
+                }}
+            }});
+            const domain = window.location.origin;
+            const shortButton = document.getElementById('short-button');
+            const resultModal = document.getElementById('result-modal');
+            const shortUrl = document.getElementById('short-url');
+            const errorModal = document.getElementById('error-modal');
+            const errorText = document.getElementById('error-text');
+            const errorMessages = {{
+                URL_NOT_VALID: 'Your URL is not valid',
+                SHORT_CODE_NOT_VALID: 'Your short code can only contain numbers and letters',
+                CODE_ALREADY_EXISTS: 'That short URL is already in use'
+            }};
+            shortButton.onclick = () => {{
+                const longUrl = document.getElementById('long-url').value;
+                const shortCode = document.getElementById('short-code').value;
+                fetch('/short', {{
+                    method: 'POST',
+                    body: JSON.stringify({{
+                        'shortCode': shortCode,
+                        'longUrl': longUrl
+                    }}),
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }}
+                }}).then(res => {{
+                    res.json().then(res_j => {{
+                        if (res_j.result === 'OK') {{
+                            shortUrl.value = domain + '/' + shortCode
+                            resultModal.classList.add('is-active');
+                        }} else {{
+                            errorText.textContent = errorMessages[res_j.result] || res_j.result;
+                            errorModal.classList.add('is-active');
+                        }}
+                    }});
+                }});
+            }};
+        }};
+    </script>
+</head>
+
+<body>
+    <h1 class="title hero hero-body is-medium is-primary is-bold">My Fucking URL shortener</h1>
+    <div class="column is-one-third is-offset-one-third">
+        <div class="field">
+            <div class="control"></div>
+            <input id="long-url" class="input" type="text" name="url" placeholder="Your URL">
+        </div>
+        <div class="field">
+            <div class="control"></div>
+            <input id="short-code" class="input" type="text" name="short" placeholder="Your short URL" value="{short_code}">
+        </div>
+        <button id="short-button" class="button is-primary" type="button">Short!</button>
+        <div class="modal" id="result-modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <input id="short-url" class="input" type="text" onClick="this.select(); document.execCommand('copy');">
+                    <span class="subtitle is-6">Click to copy to clipboard</span>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+        <div class="modal" id="error-modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="notification is-danger">
+                    <button class="delete"></button>
+                    <strong>Error: </strong><p id="error-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
