@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Admin myFus</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="https://jenil.github.io/bulmaswatch/materia/bulmaswatch.min.css" />
+    <style lang="text/css">
+        #my-f-hero {
+            background-color: #d81b60;
+            background-image: none;
+        }
+    </style>
+    <script lang="text/javascript">
+        function QueryStringToJSON() {
+            var pairs = location.search.slice(1).split('&');
+            var result = {};
+            pairs.forEach(function(pair) {
+                pair = pair.split('=');
+                result[pair[0]] = decodeURIComponent(pair[1] || '');
+            });
+            return JSON.parse(JSON.stringify(result));
+        }
+
+        function replaceTable(res_j) {
+            document.querySelectorAll('.current-row').forEach(el => el.remove());
+            const templateRow = document.getElementById('row').cloneNode(true);
+            templateRow.hidden = false;
+            templateRow.classList.add('current-row');
+            for (short in res_j) {
+                const row = templateRow.cloneNode(true);
+                row.id = short;
+                row.querySelector('.short').innerText = short;
+                row.querySelector('.url').innerText = res_j[short]
+                row.querySelector('.remove').onclick = function() {
+                    fetch('/api/' + short, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    }).then(del_res => {
+                        del_res.json().then(del_res_j => {
+                            if (del_res_j.result == 'ok') {
+                                row.remove();
+                            }
+                        });
+                    });
+                };
+                document.getElementById('row').parentElement.appendChild(row);
+            }
+        }
+
+        function loadPage(n) {
+            fetch('/api?p=' + n).then(res => res.json().then(res_j => {
+                replaceTable(res_j);
+                window.history.pushState('', '', window.location.pathname + '?p=' + n);
+            }));
+        }
+        window.onload = function() {
+            const queryParams = QueryStringToJSON();
+            const currentPage = parseInt(queryParams.p || 1);
+            loadPage(currentPage);
+
+            document.getElementById('previous').onclick = function() {
+                const queryParams = QueryStringToJSON();
+                const currentPage = parseInt(queryParams.p || 1);
+                loadPage(currentPage-1);
+            }
+
+            document.getElementById('next').onclick = function() {
+                const queryParams = QueryStringToJSON();
+                const currentPage = parseInt(queryParams.p || 1);
+                loadPage(currentPage+1);
+            }
+
+            document.getElementById('check-code').onclick = function() {
+                const code = document.getElementById('one-code').value;
+                fetch('/api/' + code).then(res => res.json().then(replaceTable));
+            }
+        };
+    </script>
+</head>
+<body>
+    <h1 id="my-f-hero" class="title hero hero-body is-medium is-primary is-bold">Admin</h1>
+
+
+    <div class="field has-addons">
+        <div class="control">
+            <input id="one-code" type="text" class="input is-small" placeholder="Code">
+        </div>
+        <div class="control">
+            <button id="check-code" class="change-password button is-small">Check</button>
+        </div>
+    </div>
+    <div class="column table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Short</th>
+                    <th>URL</th>
+                    <th>Remove</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr id="row" hidden="hidden">
+                    <th class="short">short</th>
+                    <th class="url">url</th>
+                    <td><button class="remove button is-small is-danger">Remove</button></td>
+                </tr>
+            </tbody>
+            <button id="previous" class="remove button is-small">Previous</button>
+            <button id="next" class="remove button is-small">Next</button>
+        </table>
+    </div>
+</body>
+</html>

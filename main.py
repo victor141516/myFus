@@ -1,8 +1,16 @@
 from flask import Flask, request, redirect, make_response, abort, jsonify
+import hashlib
+from functools import wraps
 import logging
 import os
 import re
 from redpie import Redpie
+
+
+SALT = os.environ['SALT']
+
+def encode_p(p):
+    return hashlib.sha256((p + SALT).encode('utf-8')).hexdigest()
 
 
 app = Flask('myFus')
@@ -13,11 +21,25 @@ db = Redpie(
 )
 if '_last_key' not in db:
     db['_last_key'] = 'a'
+db['_admin'] = encode_p(os.environ['ADMIN_PASSWORD'])
 LOGGER = logging.getLogger()
 base = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
 url_regex = re.compile('^http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$')
 with open('upload.html', 'r') as f:
     upload_html = f.read()
+
+with open('admin.html', 'r') as f:
+    admin_html = f.read()
+
+
+def admin(f):
+    @wraps(f)
+    def w(*args, **kwargs):
+        if 'p' in request.cookies and '_admin' in db and request.cookies['p'] == db['_admin']:
+            return f(*args, **kwargs)
+        else:
+            return redirect('/admin/login')
+    return w
 
 
 def to_code(n):
@@ -72,6 +94,49 @@ def make_short():
     db[short_code] = long_url
     db['_last_key'] = short_code
     return jsonify({'result': 'OK'})
+
+@app.route('/admin/login', methods=['POST', 'GET'])
+def admin_login():
+    if request.method=='GET':
+        return '<form action="/admin/login" method="POST"><input name="password" type="password"><button>Send</button></form>'
+    else:
+        response = redirect('/admin')
+        if 'password' in request.form:
+            response.set_cookie('p', value=encode_p(request.form['password']))
+        return response
+
+
+@app.route('/admin', methods=['POST', 'GET'])
+@admin
+def show_admin():
+    return admin_html
+
+@app.route('/api/<short_code>', methods=['GET', 'DELETE'])
+@app.route('/api', methods=['GET'])
+@admin
+def api(short_code=None):
+    if request.method == 'DELETE':
+        try:
+            del(db[short_code])
+            return jsonify({'result': 'OK'})
+        except Exception as e:
+            return jsonify({'result': 'FAILED'})
+    else:
+        results = {}
+        if short_code:
+            if short_code in db:
+                results[short_code] = db[short_code]
+        else:
+            page = int(request.args.get('p', 1))
+            rows_per_page = 20
+            codes_from = (page-1) * rows_per_page
+            codes_to = page * rows_per_page
+            for n in range(codes_from, codes_to):
+                code = to_code(n)
+                if code in db:
+                    results[code] = db[code]
+        return jsonify(results)
+
 
 
 @app.route('/<short_code>', methods=['GET'])
