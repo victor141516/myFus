@@ -27,7 +27,7 @@
                     }});
                 }}
             }});
-            const domain = window.location.origin;
+            const domain = window !== window.top ? document.referrer : window.location.origin;
             const shortButton = document.getElementById('short-button');
             const resultModal = document.getElementById('result-modal');
             const shortUrl = document.getElementById('short-url');
