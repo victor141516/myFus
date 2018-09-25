@@ -27,10 +27,9 @@
                     }});
                 }}
             }});
+            let domain = window.location.origin;
             if (window !== window.top) {{
                 const domain = document.referrer.endsWith('/') ? document.referrer.substring(0, document.referrer.length-1) : document.referrer;
-            }} else {{
-                const domain = window.location.origin;
             }}
             const shortButton = document.getElementById('short-button');
             const resultModal = document.getElementById('result-modal');
