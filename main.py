@@ -9,6 +9,7 @@ from redpie import Redpie
 
 SALT = os.environ['SALT']
 
+
 def encode_p(p):
     return hashlib.sha256((p + SALT).encode('utf-8')).hexdigest()
 
@@ -47,7 +48,7 @@ def to_code(n):
     if n == 0:
         return base[0]
     digits = []
-    while n:
+    while n > 0:
         digits.append(int(n % b))
         n //= b
     res = ''
@@ -67,6 +68,10 @@ def to_n(code):
 
 def next_code(code):
     return to_code(to_n(code) + 1)
+
+
+def previous_code(code):
+    return to_code(to_n(code) - 1)
 
 
 @app.route('/', methods=['GET'])
@@ -95,6 +100,7 @@ def make_short():
     db['_last_key'] = short_code
     return jsonify({'result': 'OK'})
 
+
 @app.route('/admin/login', methods=['POST', 'GET'])
 def admin_login():
     if request.method=='GET':
@@ -111,6 +117,7 @@ def admin_login():
 def show_admin():
     return admin_html
 
+
 @app.route('/api/<short_code>', methods=['GET', 'DELETE'])
 @app.route('/api', methods=['GET'])
 @admin
@@ -122,19 +129,27 @@ def api(short_code=None):
         except Exception as e:
             return jsonify({'result': 'FAILED'})
     else:
-        results = {}
+        results = []
         if short_code:
             if short_code in db:
-                results[short_code] = db[short_code]
+                results.append([short_code, db[short_code]])
         else:
-            page = int(request.args.get('p', 1))
-            rows_per_page = 20
-            codes_from = (page-1) * rows_per_page
-            codes_to = page * rows_per_page
-            for n in range(codes_from, codes_to):
-                code = to_code(n)
-                if code in db:
-                    results[code] = db[code]
+            from_code = request.args.get('f', False)
+            to_code = request.args.get('t', False)
+            rows_per_page = min(int(request.args.get('n', 20)), 20)
+            if from_code:
+                while rows_per_page > 0 and from_code != next_code(db['_last_key']):
+                    from_code = next_code(from_code)
+                    if from_code in db:
+                        rows_per_page -= 1
+                        results.append([from_code, db[from_code]])
+            elif to_code:
+                while rows_per_page > 0 and to_code != previous_code('a'):
+                    to_code = previous_code(to_code)
+                    if to_code in db:
+                        rows_per_page -= 1
+                        results.insert(0, [to_code, db[to_code]])
+
         return jsonify(results)
 
 
