@@ -78,7 +78,7 @@ def previous_code(code):
 def get_index():
     first_available = db['_last_key']
     while first_available in db:
-        first_available = next_code(last_code)
+        first_available = next_code(first_available)
     return upload_html.format(short_code=first_available)
 
 
