@@ -14,6 +14,8 @@
         }
     </style>
     <script lang="text/javascript">
+        let firstCode = QueryStringToJSON().f || 'a';
+        let lastCode;
         function QueryStringToJSON() {
             var pairs = location.search.slice(1).split('&');
             var result = {};
@@ -29,11 +31,12 @@
             const templateRow = document.getElementById('row').cloneNode(true);
             templateRow.hidden = false;
             templateRow.classList.add('current-row');
-            for (short in res_j) {
+            for (i in res_j) {
                 const row = templateRow.cloneNode(true);
+                const short = res_j[i][0]
                 row.id = short;
                 row.querySelector('.short').innerText = short;
-                row.querySelector('.url').innerText = res_j[short]
+                row.querySelector('.url').innerText = res_j[i][1];
                 row.querySelector('.remove').onclick = function() {
                     fetch('/api/' + short, {
                         method: 'DELETE',
@@ -52,27 +55,44 @@
             }
         }
 
-        function loadPage(n) {
-            fetch('/api?p=' + n).then(res => res.json().then(res_j => {
-                replaceTable(res_j);
-                window.history.pushState('', '', window.location.pathname + '?p=' + n);
-            }));
-        }
         window.onload = function() {
             const queryParams = QueryStringToJSON();
             const currentPage = parseInt(queryParams.p || 1);
-            loadPage(currentPage);
+            fetch('/api?f=' + firstCode).then(res => res.json().then(res_j => {
+                replaceTable(res_j);
+                firstCode = res_j[0][0];
+                lastCode = res_j[res_j.length - 1][0];
+                window.history.pushState('', '', window.location.pathname + '?f=' + firstCode);
+            }));
 
             document.getElementById('previous').onclick = function() {
                 const queryParams = QueryStringToJSON();
-                const currentPage = parseInt(queryParams.p || 1);
-                loadPage(currentPage-1);
+                fetch('/api?t=' + firstCode).then(res => res.json().then(res_j => {
+                    document.getElementById('next').disabled = false;
+                    if (res_j.length > 0) {
+                        replaceTable(res_j);
+                        firstCode = res_j[0][0];
+                        lastCode = res_j[res_j.length - 1][0];
+                        window.history.pushState('', '', window.location.pathname + '?t=' + lastCode);
+                    } else {
+                        document.getElementById('previous').disabled = true;
+                    }
+                }));
             }
 
             document.getElementById('next').onclick = function() {
                 const queryParams = QueryStringToJSON();
-                const currentPage = parseInt(queryParams.p || 1);
-                loadPage(currentPage+1);
+                fetch('/api?f=' + lastCode).then(res => res.json().then(res_j => {
+                    document.getElementById('previous').disabled = false;
+                    if (res_j.length > 0) {
+                        replaceTable(res_j);
+                        firstCode = res_j[0][0];
+                        lastCode = res_j[res_j.length - 1][0];
+                        window.history.pushState('', '', window.location.pathname + '?f=' + firstCode);
+                    } else {
+                        document.getElementById('next').disabled = true;
+                    }
+                }));
             }
 
             document.getElementById('check-code').onclick = function() {
