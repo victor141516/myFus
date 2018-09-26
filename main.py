@@ -141,11 +141,14 @@ def api(short_code=None):
             to_code = request.args.get('t', False)
             rows_per_page = min(int(request.args.get('n', 20)), 20)
             if from_code:
-                while rows_per_page > 0 and from_code != next_code(db['_last_key']):
+                tries = 0
+                while rows_per_page > 0 and tries < 500: # and from_code != next_code(db['_last_key']):
                     from_code = next_code(from_code)
                     if from_code in db:
                         rows_per_page -= 1
                         results.append([from_code, db[from_code]])
+                    else:
+                        tries += 1
             elif to_code:
                 while rows_per_page > 0 and to_code != previous_code('a'):
                     to_code = previous_code(to_code)
