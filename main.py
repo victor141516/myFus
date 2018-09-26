@@ -76,8 +76,10 @@ def previous_code(code):
 
 @app.route('/', methods=['GET'])
 def get_index():
-    last_code = db['_last_key']
-    return upload_html.format(short_code=next_code(last_code))
+    first_available = db['_last_key']
+    while first_available in db:
+        first_available = next_code(last_code)
+    return upload_html.format(short_code=first_available)
 
 
 @app.route('/short', methods=['POST', 'GET'])
@@ -97,7 +99,8 @@ def make_short():
     if short_code in db:
         return jsonify({'result': 'CODE_ALREADY_EXISTS'})
     db[short_code] = long_url
-    db['_last_key'] = short_code
+    if short_code == next_code(db['_last_key']):
+        db['_last_key'] = short_code
     return jsonify({'result': 'OK'})
 
 
