@@ -25,7 +25,6 @@ if '_last_key' not in db:
 db['_admin'] = encode_p(os.environ['ADMIN_PASSWORD'])
 LOGGER = logging.getLogger()
 base = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-url_regex = re.compile('^http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$')
 with open('upload.html', 'r') as f:
     upload_html = f.read()
 
@@ -91,8 +90,6 @@ def make_short():
 
     short_code = data['shortCode']
     long_url = data['longUrl']
-    if not url_regex.match(long_url):
-        return jsonify({'result': 'URL_NOT_VALID'})
     for char in short_code:
         if char not in base:
             return jsonify({'result': 'SHORT_CODE_NOT_VALID'})
