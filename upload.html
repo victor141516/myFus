@@ -22,6 +22,7 @@
         window.onload = function() {{
             document.querySelectorAll('.modal-background').forEach(el => {{
                 el.onclick = function() {{
+                    shortUrl.onkeypress = null;
                     document.querySelectorAll('.is-active').forEach(m => {{
                         m.classList.remove('is-active');
                     }});
@@ -58,6 +59,13 @@
                         if (res_j.result === 'OK') {{
                             shortUrl.value = domain + '/' + shortCode
                             resultModal.classList.add('is-active');
+                            shortUrl.focus();
+                            shortUrl.onkeypress = key => {{
+                                if (key.charCode === 13) {{
+                                    shortUrl.select();
+                                    document.execCommand('copy');
+                                }}
+                            }}
                         }} else {{
                             errorText.textContent = errorMessages[res_j.result] || res_j.result;
                             errorModal.classList.add('is-active');
