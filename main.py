@@ -1,11 +1,12 @@
-from flask import Flask, request, redirect, make_response, abort, jsonify
 import hashlib
-from functools import wraps
 import logging
 import os
 import re
-from redpie import Redpie
+from functools import wraps
 
+from flask import Flask, abort, jsonify, make_response, redirect, request
+from flask_cors import CORS
+from redpie import Redpie
 
 SALT = os.environ['SALT']
 
@@ -15,6 +16,7 @@ def encode_p(p):
 
 
 app = Flask('myFus')
+CORS(app)
 db = Redpie(
     int(os.environ.get('REDIS_DB', 0)),
     os.environ.get('REDIS_HOST', 'localhost'),

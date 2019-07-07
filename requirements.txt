@@ -1,2 +1,3 @@
 redpie
 Flask
+flask-cors
