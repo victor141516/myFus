@@ -91,6 +91,10 @@ def make_short():
         data = request.args
 
     short_code = data.get('shortCode', next_code(db['_last_key']))
+    if short_code is None:
+        while short_code in db:
+            short_code = next_code(short_code)
+
     long_url = data['longUrl']
     for char in short_code:
         if char not in base:
