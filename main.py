@@ -88,7 +88,7 @@ def make_short():
     else:
         data = request.args
 
-    short_code = data['shortCode']
+    short_code = data.get('shortCode', next_code(db['_last_key']):)
     long_url = data['longUrl']
     for char in short_code:
         if char not in base:
@@ -98,7 +98,7 @@ def make_short():
     db[short_code] = long_url
     if short_code == next_code(db['_last_key']):
         db['_last_key'] = short_code
-    return jsonify({'result': 'OK'})
+    return jsonify({'result': 'OK', 'short': short_code})
 
 
 @app.route('/admin/login', methods=['POST', 'GET'])
