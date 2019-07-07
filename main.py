@@ -90,8 +90,9 @@ def make_short():
     else:
         data = request.args
 
-    short_code = data.get('shortCode', next_code(db['_last_key']))
+    short_code = data.get('shortCode')
     if short_code is None:
+        short_code = next_code(db['_last_key'])
         while short_code in db:
             short_code = next_code(short_code)
 
@@ -172,4 +173,4 @@ def make_redirect(short_code):
 
 
 if __name__ == "__main__":
-    app.run('0.0.0.0', 12121, True)
+    app.run('0.0.0.0', 8000, True)
