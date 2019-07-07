@@ -88,7 +88,7 @@ def make_short():
     else:
         data = request.args
 
-    short_code = data.get('shortCode', next_code(db['_last_key']):)
+    short_code = data.get('shortCode', next_code(db['_last_key']))
     long_url = data['longUrl']
     for char in short_code:
         if char not in base:
